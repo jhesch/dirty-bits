@@ -1,0 +1,11 @@
+backend:
+  - 'backend/README.md'
+  - 'backend/main.go'
+  - 'backend/version.sh'
+
+frontend:
+  - 'frontend/src/app/main.ts'
+  - 'frontend/src/app/app.module.ts'
+  - 'frontend/README.md'
+  - 'frontend/deploy.sh'
+  - 'frontend/version.sh'
