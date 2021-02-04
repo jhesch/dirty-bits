@@ -1,0 +1,10 @@
+src:
+  - 'src/**'
+dist:
+  - 'dist/**'
+readme:
+  - 'README.md'
+tests:
+  - '__tests__/**'
+workflows:
+  - '.github/workflows/**'

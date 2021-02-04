@@ -1,0 +1,51 @@
+name: Build and test
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'releases/*'
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: npm ci
+      - run: npm run all
+  get-dirty:
+    runs-on: ubuntu-latest
+    outputs:
+      json-results: ${{ steps.dirty-bits.outputs.json-results }}
+      some-dirty: ${{ steps.dirty-bits.outputs.some-dirty }}
+      dirty-bits: ${{ steps.dirty-bits.outputs.dirty-bits }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./
+        id: dirty-bits
+        with:
+          rules-file: .github/dirty-bits-rules.yaml
+          results-file: ${{ runner.temp }}/results.json
+      - run: |
+          echo These bits are clean: ${{ steps.dirty-bits.outputs.clean }}
+          echo These bits are dirty: ${{ steps.dirty-bits.outputs.dirty }}
+          echo The src bit is ${{ steps.dirty-bits.outputs.src }}
+          echo The dist bit is ${{ steps.dirty-bits.outputs.dist }}
+          echo runner.temp: ${{ runner.temp }}
+          jq . ${{ runner.temp }}/results.json
+          jq . $GITHUB_EVENT_PATH
+        shell: bash
+  show-dirty:
+    runs-on: ubuntu-latest
+    needs: get-dirty
+    if: needs.get-dirty.outputs.some-dirty == 'true'
+    steps:
+      - run: |
+          echo Clean bits: ${{ needs.get-dirty.outputs.dirty-bits }}
+          echo Dirty bits: ${{ needs.get-dirty.outputs.dirty-bits }}
+          echo Compare commits URL: $(echo \
+            '${{ needs.get-dirty.outputs.json-results }}' | \
+            jq .compareCommitsUrl)
+        shell: bash
