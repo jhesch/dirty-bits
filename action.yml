@@ -4,6 +4,9 @@ inputs:
   rules-file:
     description: Path to YAML file containing rules
     required: true
+  results-file:
+    description: Path to file on runner to write JSON results
+    required: false
   token:
     description: GitHub authentication token
     required: false
