@@ -84,18 +84,9 @@ describe('compare commits', () => {
 test('match', () => {
   const ctx = {} as any
   const rules = {
-    backend: [
-      'backend/**/*.go',
-    ],
-    frontend: [
-      'frontend/**',
-      '!README.md',
-      '!*.sh',
-      'frontend/version.sh',
-    ],
-    worker: [
-      'worker/**',
-    ],
+    backend: ['backend/**/*.go'],
+    frontend: ['frontend/**', '!README.md', '!*.sh', 'frontend/version.sh'],
+    worker: ['worker/**'],
   } as Rules
   const changedFiles = [
     { filename: 'backend/README.md' },
