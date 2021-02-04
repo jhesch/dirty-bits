@@ -1,0 +1,36 @@
+name: Dirty Bits
+description: Identifies the parts of a repository that need to be built, tested, deployed, etc. depending on which files have changed
+inputs:
+  rules-file:
+    description: Path to YAML file containing rules
+    required: true
+  token:
+    description: GitHub authentication token
+    required: false
+    default: ${{ github.token }}
+  repository:
+    description: GitHub repository
+    required: false
+    default: ${{ github.repository }}
+  base:
+    description: Base commit SHA or tag name, automatically detected by default
+    required: false
+  head:
+    description: Head commit SHA or tag name, automatically detected by default
+    required: false
+outputs:
+  all-clean:
+    description: A boolean value to indicate whether all repo bits are marked clean
+  all-dirty:
+    description: A boolean value to indicate whether all repo bits are marked dirty
+  some-dirty:
+    description: A boolean value to indicate whether at least one repo bit is marked dirty
+  clean-bits:
+    description: A space-separated list of the repo bits that are marked as clean
+  dirty-bits:
+    description: A space-separated list of the repo bits that are marked as dirty
+  json-results:
+    description: The results as a JSON string
+runs:
+  using: 'node12'
+  main: 'index.js'
