@@ -1,16 +1,18 @@
-![Build and test](https://github.com/jhesch/dirty-bits/workflows/Build%20and%20test/badge.svg)
+<p align="center">
+  <a href="https://github.com/jhesch/dirty-bits/actions?query=workflow%3Abuild-test"><img alt="Dirty Bits build-test status" src="https://github.com/jhesch/dirty-bits/workflows/build-test/badge.svg"></a>
+</p>
 
-# Dirty Bits GitHub Action
+# Dirty Bits GitHub action
 
 > Exposes your repo's dirty bits
 
-Dirty Bits is a GitHub Action that identifies the parts of a repository
+Dirty Bits is a GitHub action that identifies the parts of a repository
 that need to be built, tested, deployed, etc. depending on which files
 have changed.
 
 Maybe you have a monorepo and a slick CI/CD system. Maybe you want to be
 able to tweak the frontend without having to build and test the backend
-unnecessarily. Maybe the indexer shouldn't be deployed too when the only
+unnecessarily. Maybe the indexer shouldn't be deployed when the only
 thing that changed since the last release was the task worker.
 
 Like the [dirty bits](https://en.wikipedia.org/wiki/Dirty_bit) that mark
@@ -20,11 +22,37 @@ and signals that they need to be processed.
 
 ## How it works
 
+Dirty Bits runs as part of a GitHub Actions workflow and detects which
+files have been added, removed, updated or renamed. It compares those
+files against a set of rules to determine the parts (or "bits") of the
+repo that have changed. It marks those bits "dirty" to inform other
+steps and jobs in the workflow how to proceed.
+
+If Dirty Bits is unable to determine with confidence which files were
+modified, it marks all bits dirty.
+
+Dirty Bits can respond to
+[pull_request](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#pull_request),
+[push](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#push)
+and
+[release](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#release)
+events. It identifies two commits that represent the state of the
+repository before and after the event that triggered the action. Those
+commits are referred to as `base` (the repo state before the event) and
+`head` (the repo state at the event). In the case of a `release` event,
+Dirty Bits will attempt to find the last _published_ release prior to
+the the active release and use its `tag_name` as `base`.
+
+## Rules file
+
 You tell Dirty Bits what to do by writing a _rules file_. The rules file
-associates a list of patterns with each relevant part (or "bit") of your
-repo, and the patterns instruct Dirty Bits to mark each bit dirty when a
-changed file matches. The patterns are similar to
-[gitignore](https://git-scm.com/docs/gitignore) patterns.
+associates a list of patterns with the relevant bits of your repo, and
+the patterns instruct Dirty Bits to mark each bit dirty when a changed
+file matches. The patterns are similar to
+[gitignore](https://git-scm.com/docs/gitignore) patterns. The [filter
+pattern cheat
+sheet](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet)
+from the GitHub Actions docs provides a useful overview.
 
 If your repo looks like this:
 
@@ -35,23 +63,29 @@ README.md backend/ frontend/ indexer/ lib/ worker/
 
 you may want to build the frontend whenever files in the `frontend` or
 `lib` directories are touched, but not for changes to `README.md` or
-files under `backend`, `indexer` or `worker`. There might be some files
-under `frontend` that you do not want to trigger a build, like other
-markdown files with a `.md` extension. Any files included by a previous
-patterns like `frontend/**` can be excluded with a negated pattern later
-in the list, like `!*.md`:
+files under `backend`, `indexer` or `worker`.
+
+There might be some files under `frontend` that you do not want to
+trigger a build, like other markdown files with a `.md` extension. Any
+files included by a previous patterns like `frontend/**` can be excluded
+with a negated pattern later in the list, like `!*.md`
+
+### Example rules file
 
 ```yaml
 backend:
   - 'backend/**'
   - 'lib/**'
+
 frontend:
   - 'frontend/**'
   - 'lib/**'
   - '!*.md'
+
 indexer:
   - 'indexer/**'
   - 'lib/**'
+
 worker:
   - 'worker/**'
   - 'lib/**'
@@ -64,33 +98,18 @@ pattern and will not cause the `frontend` bit to be marked dirty.
 The repo bit names, like `frontend` in the rules file above, are just
 identifiers for you and do not carry any special meaning within Dirty
 Bits. In some cases, however, it can be useful to have their names match
-the corresponding directories in the repo when writing workflow files.
-See [Example usage](#example-usage) for an example.
-
-Dirty Bits responds to
-[pull_request](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#pull_request),
-[push](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#push)
-and
-[release](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#release)
-events. It identifies two commits that represent the state of the
-repository before and after the event that triggered the action. Those
-commits are referred to as `base` (the repo state before the event) and
-`head` (the repo state at the event). In the case of a `release` event,
-Dirty Bits will attempt to find the last _published_ release prior to
-the the active release and use its `tag_name` as `base`.
-
-If Dirty Bits is unable to determine with confidence which files were
-modified, it marks all bits dirty.
+corresponding locations in the repo when writing workflow files. See
+[Example usage](#example-usage) for an example.
 
 ## Inputs
 
 ### `rules-file`
 
-**Required** The path to the rules file containing a list of patterns
-for each repo bit.
+**Required** The path to the YAML rules file containing a list of
+patterns for each repo bit.
 
 The rules file should be committed to the repository, perhaps to
-`.github/dirty-bits-rules.yaml`.
+`.github/dirty-bits.yaml`.
 
 ### `results-file`
 
@@ -129,7 +148,8 @@ In addition to the explicitly named outputs listed below, there will be
 an ouput for each repo bit named in the rules file. The value of the
 output for each repo bit is either `clean` or `dirty`.
 
-The example rules file above might produce the following outputs:
+The [example rules file](#example-rules-file) above might produce the
+following outputs:
 
 | Output     | Value   |
 | ---------- | ------- |
@@ -158,20 +178,20 @@ dirty.
 ### `clean-bits`
 
 A space-separated list of the repo bits that are marked as clean.
-Example value: `backend indexer`.
+Example value: `backend indexer`
 
 ### `dirty-bits`
 
 A space-separated list of the repo bits that are marked as dirty.
-Example value: `frontend worker`.
+Example value: `frontend worker`
 
 ### `json-results`
 
 The results as a JSON string.
 
-The example rules file above might produce the following `json-results`
-on a release event with tag `v1.0.2` that includes changes to `frontend`
-and `worker`:
+The [example rules file](#example-rules-file) above might produce the
+following `json-results` on a release event with tag `v1.0.2` that
+includes changes to `frontend` and `worker`:
 
 ```json
 {
@@ -225,7 +245,7 @@ jobs:
       - uses: jhesch/dirty-bits@v1
         id: dirty-bits
         with:
-          rules-file: .github/dirty-bits-rules.yaml
+          rules-file: .github/dirty-bits.yaml
       - run: |
           echo These bits are clean: ${{ steps.dirty-bits.outputs.clean-bits }}
           echo These bits are dirty: ${{ steps.dirty-bits.outputs.dirty-bits }}
@@ -238,6 +258,7 @@ jobs:
     # Skip the deploy job altogether if all clean.
     if: needs.get-dirty.outputs.some-dirty == 'true'
     steps:
+      - uses: actions/checkout@v2
       - run: |
           gcloud app deploy $(echo '${{ needs.get-dirty.outputs.json-results }}' \
             | jq -r '.dirtyBits | map("\(.)/app.yaml") | join(" ")')

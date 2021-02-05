@@ -85,11 +85,13 @@ test('match', () => {
   const ctx = {} as any
   const rules = {
     backend: ['backend/**/*.go'],
-    frontend: ['frontend/**', '!README.md', '!*.sh', 'frontend/version.sh'],
+    frontend: ['frontend/**', 'app.yaml', '!*/app.yaml', '!README.md', '!*.sh', 'frontend/version.sh'],
     worker: ['worker/**'],
   } as Rules
   const changedFiles = [
+    { filename: 'app.yaml' },
     { filename: 'backend/README.md' },
+    { filename: 'backend/app.yaml' },
     { filename: 'backend/main.go' },
     { filename: 'backend/foo.go' },
     { filename: 'backend/bar.go' },
@@ -105,7 +107,7 @@ test('match', () => {
   expect(matchResult.backend.matchedFiles).toHaveLength(3)
   expect(matchResult.backend.matchedFiles).toContain('backend/main.go')
   expect(matchResult.frontend.dirty).toBeTruthy()
-  expect(matchResult.frontend.matchedFiles).toHaveLength(3)
+  expect(matchResult.frontend.matchedFiles).toHaveLength(4)
   expect(matchResult.frontend.matchedFiles).toContain('frontend/version.sh')
   expect(matchResult.worker.dirty).toBeFalsy()
   expect(matchResult.worker.matchedFiles).toHaveLength(0)

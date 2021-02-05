@@ -100,14 +100,7 @@ export function loadRules(rulesFile: string): Rules {
   } catch (e) {
     throw new Error(`loading rules file ${rulesFile} failed: ${e}`)
   }
-  const reserved = new Set<string>([
-    OutputNames.allClean,
-    OutputNames.allDirty,
-    OutputNames.someDirty,
-    OutputNames.cleanBits,
-    OutputNames.dirtyBits,
-    OutputNames.results,
-  ])
+  const reserved = new Set<string>(Object.values(OutputNames))
   for (const [bit, patterns] of Object.entries(rules)) {
     if (reserved.has(bit)) {
       throw new Error(`invalid rules file: "${bit}" is a reserved word`)

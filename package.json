@@ -1,7 +1,7 @@
 {
   "name": "dirty-bits",
   "version": "0.0.0",
-  "description": "GitHub Action that identifies the parts of a repository that need to be built, tested, deployed, etc. depending on which files have changed",
+  "description": "GitHub action that identifies the parts of a repository that need to be built, tested, deployed, etc. depending on which files have changed",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
@@ -17,11 +17,12 @@
     "url": "git+ssh://git@github.com/jhesch/dirty-bits.git"
   },
   "keywords": [
+    "github",
     "actions",
-    "node",
+    "workflow",
+    "monorepo",
     "ci",
-    "cd",
-    "monorepo"
+    "cd"
   ],
   "author": "Jacob Hesch",
   "license": "MIT",

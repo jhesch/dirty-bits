@@ -1,4 +1,4 @@
-name: Build and test
+name: build-test
 on:
   pull_request:
   push:
@@ -26,7 +26,7 @@ jobs:
       - uses: ./
         id: dirty-bits
         with:
-          rules-file: .github/dirty-bits-rules.yaml
+          rules-file: .github/dirty-bits.yaml
           results-file: ${{ runner.temp }}/results.json
       - run: |
           echo These bits are clean: ${{ steps.dirty-bits.outputs.clean }}
