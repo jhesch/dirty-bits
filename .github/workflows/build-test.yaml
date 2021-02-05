@@ -20,6 +20,7 @@ jobs:
     outputs:
       json-results: ${{ steps.dirty-bits.outputs.json-results }}
       some-dirty: ${{ steps.dirty-bits.outputs.some-dirty }}
+      clean-bits: ${{ steps.dirty-bits.outputs.clean-bits }}
       dirty-bits: ${{ steps.dirty-bits.outputs.dirty-bits }}
     steps:
       - uses: actions/checkout@v2

@@ -265,7 +265,7 @@ export async function detect(ctx: ActionContext, rules: Rules): Promise<Results>
     base: ctx.base,
     head: ctx.head,
     compareCommitsUrl: ctx.compareCommitsUrl,
-    allDirty: ctx.allDirty,
+    allDirty: ctx.allDirty ?? false,
     allDirtyReason: ctx.allDirtyReason,
   } as Results
   if (results.allDirty) {

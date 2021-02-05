@@ -215,6 +215,7 @@ function match(ctx, rules, changedFiles) {
 }
 exports.match = match;
 function detect(ctx, rules) {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         yield findCommitRange(ctx, github.context.eventName);
         const changedFiles = yield compareCommits(ctx);
@@ -226,7 +227,7 @@ function detect(ctx, rules) {
             base: ctx.base,
             head: ctx.head,
             compareCommitsUrl: ctx.compareCommitsUrl,
-            allDirty: ctx.allDirty,
+            allDirty: (_a = ctx.allDirty) !== null && _a !== void 0 ? _a : false,
             allDirtyReason: ctx.allDirtyReason,
         };
         if (results.allDirty) {
