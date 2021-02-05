@@ -28,9 +28,6 @@ files against a set of rules to determine the parts (or "bits") of the
 repo that have changed. It marks those bits "dirty" to inform other
 steps and jobs in the workflow how to proceed.
 
-If Dirty Bits is unable to determine with confidence which files were
-modified, it marks all bits dirty.
-
 Dirty Bits can respond to
 [pull_request](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#pull_request),
 [push](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#push)
@@ -42,6 +39,12 @@ commits are referred to as `base` (the repo state before the event) and
 `head` (the repo state at the event). In the case of a `release` event,
 Dirty Bits will attempt to find the last _published_ release prior to
 the the active release and use its `tag_name` as `base`.
+
+The rules are applied to the set of files that differ between `base` and
+`head` in order to determine the repo's dirty bits.
+
+If Dirty Bits is unable to determine with confidence which files were
+modified, it marks all bits dirty.
 
 ## Rules file
 
@@ -67,8 +70,9 @@ files under `backend`, `indexer` or `worker`.
 
 There might be some files under `frontend` that you do not want to
 trigger a build, like other markdown files with a `.md` extension. Any
-files included by a previous patterns like `frontend/**` can be excluded
-with a negated pattern later in the list, like `!*.md`
+files included by a previous pattern like `frontend/**` can be excluded
+with a negated pattern later in the list, like `!*.md` in the example
+below.
 
 ### Example rules file
 
@@ -98,8 +102,9 @@ pattern and will not cause the `frontend` bit to be marked dirty.
 The repo bit names, like `frontend` in the rules file above, are just
 identifiers for you and do not carry any special meaning within Dirty
 Bits. In some cases, however, it can be useful to have their names match
-corresponding locations in the repo when writing workflow files. See
-[Example usage](#example-usage) for an example.
+corresponding locations in the repo when writing workflow files. See the
+final step of the `deploy` job in [Example usage](#example-usage) for an
+example.
 
 ## Inputs
 
@@ -177,13 +182,13 @@ dirty.
 
 ### `clean-bits`
 
-A space-separated list of the repo bits that are marked as clean.
-Example value: `backend indexer`
+A space-separated list of the repo bits that are marked clean. Example
+value: `backend indexer`
 
 ### `dirty-bits`
 
-A space-separated list of the repo bits that are marked as dirty.
-Example value: `frontend worker`
+A space-separated list of the repo bits that are marked dirty. Example
+value: `frontend worker`
 
 ### `json-results`
 
@@ -228,7 +233,7 @@ See [Example usage](#example-usage) for an example of how to use
 ## Example usage
 
 ```yaml
-name: 'Dirty Bits example'
+name: Dirty Bits example
 on:
   release:
     types: [published]
@@ -237,11 +242,14 @@ jobs:
   # Determine which repo bits have changed.
   get-dirty:
     runs-on: ubuntu-latest
+    # Make outputs available to the deploy job.
     outputs:
       json-results: ${{ steps.dirty-bits.outputs.json-results }}
       some-dirty: ${{ steps.dirty-bits.outputs.some-dirty }}
     steps:
-      - uses: actions/checkout@v2 # check out the rules file
+      # Check out the rules file.
+      - uses: actions/checkout@v2
+      # Detect dirty bits.
       - uses: jhesch/dirty-bits@v1
         id: dirty-bits
         with:
@@ -255,19 +263,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: get-dirty
-    # Skip the deploy job altogether if all clean.
+    # Skip the deploy job if all bits are clean.
     if: needs.get-dirty.outputs.some-dirty == 'true'
     steps:
       - uses: actions/checkout@v2
+      # Build and execute a deploy command based on Dirty Bits results.
       - run: |
           gcloud app deploy $(echo '${{ needs.get-dirty.outputs.json-results }}' \
-            | jq -r '.dirtyBits | map("\(.)/app.yaml") | join(" ")')
+            | jq -r '.dirtyBits | map("\(.)/app.yaml") | join(" ")') -q
         shell: bash
 ```
 
 The run step in the example `deploy` job uses
 [jq](https://stedolan.github.io/jq/) to map each dirty bit to the
 corresponding `app.yaml` file in the bit's directory, resulting in a
-command like `gcloud app deploy frontend/app.yaml worker/app.yaml`. Note
-that this requires naming each bit in the rules file the same as its
-directory in the repo.
+command like `gcloud app deploy frontend/app.yaml worker/app.yaml -q`.
+Note that this requires naming each bit in the rules file the same as
+its directory in the repo.
