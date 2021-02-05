@@ -29,8 +29,8 @@ jobs:
           rules-file: .github/dirty-bits.yaml
           results-file: ${{ runner.temp }}/results.json
       - run: |
-          echo These bits are clean: ${{ steps.dirty-bits.outputs.clean }}
-          echo These bits are dirty: ${{ steps.dirty-bits.outputs.dirty }}
+          echo These bits are clean: ${{ steps.dirty-bits.outputs.clean-bits }}
+          echo These bits are dirty: ${{ steps.dirty-bits.outputs.dirty-bits }}
           echo The src bit is ${{ steps.dirty-bits.outputs.src }}
           echo The dist bit is ${{ steps.dirty-bits.outputs.dist }}
           echo runner.temp: ${{ runner.temp }}
@@ -43,7 +43,7 @@ jobs:
     if: needs.get-dirty.outputs.some-dirty == 'true'
     steps:
       - run: |
-          echo Clean bits: ${{ needs.get-dirty.outputs.dirty-bits }}
+          echo Clean bits: ${{ needs.get-dirty.outputs.clean-bits }}
           echo Dirty bits: ${{ needs.get-dirty.outputs.dirty-bits }}
           echo Compare commits URL: $(echo \
             '${{ needs.get-dirty.outputs.json-results }}' | \
