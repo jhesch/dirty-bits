@@ -99,9 +99,6 @@ the runner's filesystem. The file includes everything in the
 `json-results` output plus the list of files that matched the Dirty Bits
 rules for each repo bit. Example value: `${{ runner.temp }}/dirty-bits-results.json`
 
-The rules file should be committed to the repository, perhaps to
-`.github/dirty-bits-rules.yaml`.
-
 ### `token`
 
 The authentication token to use for GitHub API calls. Defaults to
