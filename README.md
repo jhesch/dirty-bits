@@ -1,3 +1,5 @@
+![Build and test](https://github.com/jhesch/dirty-bits/workflows/Build%20and%20test/badge.svg)
+
 # Dirty Bits GitHub Action
 
 > Exposes your repo's dirty bits
