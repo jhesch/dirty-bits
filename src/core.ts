@@ -165,6 +165,17 @@ async function findCommitRange(ctx: ActionContext, eventName: string): Promise<v
       ctx.head = currentRelease
       break
     }
+    case 'workflow_dispatch': {
+      type DispatchPayload = webhooks.EventPayloads.WebhookPayloadWorkflowDispatch & {
+        inputs: { base: string, head: string }
+      }
+      const dispatchPayload = github.context.payload as DispatchPayload
+      ctx.base = dispatchPayload.inputs.base
+      ctx.head = dispatchPayload.inputs.head
+      core.info(`Event: workflow dispatch ${dispatchPayload.workflow}`)
+      core.info(`Commit range from inputs: ${ctx.base}...${ctx.head}`)
+      break;
+    }
     default:
       throw new Error(`unsupported event type "${eventName}"`)
   }
