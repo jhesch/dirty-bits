@@ -1,4 +1,4 @@
-name: Dirty Bits
+name: Dirty Bits Action
 description: Identifies the parts of a repository that need to be built, tested, deployed, etc. depending on which files have changed
 inputs:
   rules-file:
