@@ -15,11 +15,15 @@ able to tweak the frontend without having to build and test the backend
 unnecessarily. Maybe the indexer shouldn't be deployed when the only
 thing that changed since the last release is the task worker.
 
-Like the [dirty bits](https://en.wikipedia.org/wiki/Dirty_bit) that mark
-memory blocks as modified signal that the blocks need to processed,
-Dirty Bits identifies the parts of a repository that have been modified
-and signals that they need to be processed.
+Like the [dirty bit](https://en.wikipedia.org/wiki/Dirty_bit) that marks
+a memory block as modified and signals that the block needs to
+processed, Dirty Bits identifies the parts of a repository that have
+been modified and signals that they need to be processed.
 
+## TL;DR
+
+See the [example rules file](#example-rules-file) and the [example
+workflow file](#example-usage).
 ## How it works
 
 Dirty Bits runs as part of a GitHub Actions workflow and detects which
@@ -28,7 +32,7 @@ files against a set of rules to determine the parts (or "bits") of the
 repo that have changed. It marks those bits "dirty" to inform other
 steps and jobs in the workflow how to proceed.
 
-Dirty Bits can respond to
+The Dirty Bits action can respond to
 [pull_request](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#pull_request),
 [push](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#push)
 and
@@ -38,7 +42,7 @@ repository before and after the event that triggered the action. Those
 commits are referred to as `base` (the repo state before the event) and
 `head` (the repo state at the event). In the case of a `release` event,
 Dirty Bits will attempt to find the last _published_ release prior to
-the the active release and use its `tag_name` as `base`.
+the the active release and use its tag name as `base`.
 
 The rules are applied to the set of files that differ between `base` and
 `head` in order to determine the repo's dirty bits.
@@ -97,7 +101,7 @@ worker:
 
 Using the rules file above, a change to `frontend/README.md` will match
 the `frontend/**` pattern but will be excluded by the later `!*.md`
-pattern and will not cause the `frontend` bit to be marked dirty.
+pattern and will not cause the `frontend` repo bit to be marked dirty.
 
 The repo bit names, like `frontend` in the rules file above, are just
 identifiers for you and do not carry any special meaning within Dirty
@@ -137,15 +141,15 @@ context](https://docs.github.com/en/actions/reference/context-and-expression-syn
 
 ### `base`
 
-The commit SHA or tag that represents the state of the repository before
-the event that triggered the action. By default `base` is automatically
-detected. Mutually required with `head`.
+The commit SHA, branch or tag name that represents the state of the
+repository before the event that triggered the action. By default `base`
+is automatically detected. Mutually required with `head`.
 
 ### `head`
 
-The commit SHA or tag that represents the state of the repository at the
-event that triggered the action. By default `head` is automatically
-detected. Mutually required with `base`.
+The commit SHA, branch or tag name that represents the state of the
+repository at the event that triggered the action. By default `head` is
+automatically detected. Mutually required with `base`.
 
 ## Outputs
 
