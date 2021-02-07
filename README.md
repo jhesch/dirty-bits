@@ -246,9 +246,14 @@ See [Example usage](#example-usage) for an example of how to use
 
 ```yaml
 name: Dirty Bits example
+
 on:
   release:
     types: [published]
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   # Determine which repo bits have changed.
@@ -270,9 +275,8 @@ jobs:
           echo These bits are clean: ${{ steps.dirty-bits.outputs.clean-bits }}
           echo These bits are dirty: ${{ steps.dirty-bits.outputs.dirty-bits }}
           echo The frontend bit is ${{ steps.dirty-bits.outputs.frontend }}
-        shell: bash
 
-  # Deploy the bits that changed, and only those bits.
+  # Deploy repo the bits that changed, and only those bits.
   deploy:
     runs-on: ubuntu-latest
     needs: get-dirty
@@ -285,7 +289,6 @@ jobs:
       - run: |
           gcloud app deploy $(echo '${{ needs.get-dirty.outputs.json-results }}' \
             | jq -r '.dirtyBits | map("\(.)/app.yaml") | join(" ")') -q
-        shell: bash
 
   # Post to Slack on successful deployment.
   notify:
@@ -308,7 +311,6 @@ jobs:
               jq -c '{text: "Deployed: \(.dirtyBits | join(", ")
               )\nChages: <\(.compareCommitsUrl)|\(.base)...\(.head)>"}') \
             ${{ secrets.SLACK_WEBHOOK_URL }}
-
 ```
 
 The run step in the example `deploy` job uses
