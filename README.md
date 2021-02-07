@@ -267,6 +267,7 @@ jobs:
           echo These bits are dirty: ${{ steps.dirty-bits.outputs.dirty-bits }}
           echo The frontend bit is ${{ steps.dirty-bits.outputs.frontend }}
         shell: bash
+
   # Deploy the bits that changed, and only those bits.
   deploy:
     runs-on: ubuntu-latest
@@ -281,6 +282,29 @@ jobs:
           gcloud app deploy $(echo '${{ needs.get-dirty.outputs.json-results }}' \
             | jq -r '.dirtyBits | map("\(.)/app.yaml") | join(" ")') -q
         shell: bash
+
+  # Post to Slack on successful deployment.
+  notify:
+    runs-on: ubuntu-latest
+    needs: [get-dirty, deploy]
+    # Run the notify job whether or not the deploy job succeeded.
+    if: always()
+    steps:
+      - name: Failure
+        if: failure()
+        run: echo Deployment failed
+      - name: All clean
+        if: success() && needs.get-dirty.outputs.some-dirty != 'true'
+        run: echo Nothing to deploy
+      - name: Success
+        if: success() && steps.dirty-bits.outputs.some-dirty == 'true'
+        run: |
+          curl -s -H 'Content-type: application/json' --data \
+            $(echo '${{ needs.get-dirty.outputs.json-results }}' | \
+              jq -c '{text: "Deployed: \(.dirtyBits | join(", ")
+              )\nChages: <\(.compareCommitsUrl)|\(.base)...\(.head)>"}') \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+
 ```
 
 The run step in the example `deploy` job uses
