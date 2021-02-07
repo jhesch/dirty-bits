@@ -136,7 +136,7 @@ function findCommitRange(ctx, eventName) {
         }
     });
 }
-/** Extracts relevant properties from entries. */
+/** Extracts relevant properties from diff entries. */
 function extract(entry) {
     const { filename, status, sha } = entry;
     const e = { filename, status, sha };
@@ -146,8 +146,8 @@ function extract(entry) {
     return e;
 }
 /**
- * Extracts relevant properties from entries, replacing filename with
- * the old name prior to rename and sets `current_filename`.
+ * Extracts relevant properties from diff entries, replacing filename
+ * with the old name prior to rename and sets `current_filename`.
  */
 function extractRenamed(entry) {
     const { filename, status, sha, previous_filename } = entry;
@@ -223,33 +223,36 @@ function match(ctx, rules, changedFiles) {
 }
 exports.match = match;
 function detect(ctx, rules) {
-    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         yield findCommitRange(ctx, github.context.eventName);
         const changedFiles = yield compareCommits(ctx);
         const matchResults = match(ctx, rules, changedFiles);
-        const results = {
-            cleanBits: [],
-            dirtyBits: [],
-            bits: matchResults,
-            base: ctx.base,
-            head: ctx.head,
-            compareCommitsUrl: ctx.compareCommitsUrl,
-            allDirty: (_a = ctx.allDirty) !== null && _a !== void 0 ? _a : false,
-            allDirtyReason: ctx.allDirtyReason,
-        };
-        if (results.allDirty) {
+        const cleanBits = [];
+        const dirtyBits = [];
+        const bits = matchResults;
+        if (ctx.allDirty) {
             for (const bitName of Object.keys(rules)) {
-                results.dirtyBits.push(bitName);
-                results.bits[bitName] = { dirty: true };
+                dirtyBits.push(bitName);
+                bits[bitName] = { dirty: true };
             }
         }
         else {
-            for (const [bitName, matchResult] of Object.entries(results.bits)) {
-                matchResult.dirty ? results.dirtyBits.push(bitName) : results.cleanBits.push(bitName);
+            for (const [bitName, matchResult] of Object.entries(bits)) {
+                matchResult.dirty ? dirtyBits.push(bitName) : cleanBits.push(bitName);
             }
         }
-        return results;
+        return {
+            allClean: dirtyBits.length === 0,
+            allDirty: cleanBits.length === 0,
+            allDirtyReason: ctx.allDirtyReason,
+            someDirty: dirtyBits.length > 0,
+            cleanBits,
+            dirtyBits,
+            bits,
+            base: ctx.base,
+            head: ctx.head,
+            compareCommitsUrl: ctx.compareCommitsUrl,
+        };
     });
 }
 exports.detect = detect;
@@ -415,9 +418,9 @@ exports.OutputNames = {
     results: 'json-results',
 };
 function setOutputs(inputs, results) {
-    core.setOutput(exports.OutputNames.allClean, results.dirtyBits.length === 0);
-    core.setOutput(exports.OutputNames.allDirty, results.cleanBits.length === 0);
-    core.setOutput(exports.OutputNames.someDirty, results.dirtyBits.length > 0);
+    core.setOutput(exports.OutputNames.allClean, results.allClean);
+    core.setOutput(exports.OutputNames.allDirty, results.allDirty);
+    core.setOutput(exports.OutputNames.someDirty, results.someDirty);
     results.cleanBits.map(bit => core.setOutput(bit, 'clean'));
     results.dirtyBits.map(bit => core.setOutput(bit, 'dirty'));
     const cleanBits = results.cleanBits.join(' ');

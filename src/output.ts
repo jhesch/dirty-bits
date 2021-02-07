@@ -13,9 +13,9 @@ export const OutputNames = {
 }
 
 export function setOutputs(inputs: Inputs, results: Results): void {
-  core.setOutput(OutputNames.allClean, results.dirtyBits.length === 0)
-  core.setOutput(OutputNames.allDirty, results.cleanBits.length === 0)
-  core.setOutput(OutputNames.someDirty, results.dirtyBits.length > 0)
+  core.setOutput(OutputNames.allClean, results.allClean)
+  core.setOutput(OutputNames.allDirty, results.allDirty)
+  core.setOutput(OutputNames.someDirty, results.someDirty)
   results.cleanBits.map(bit => core.setOutput(bit, 'clean'))
   results.dirtyBits.map(bit => core.setOutput(bit, 'dirty'))
   const cleanBits = results.cleanBits.join(' ')

@@ -13,7 +13,7 @@ have changed.
 Maybe you have a monorepo and a slick CI/CD system. Maybe you want to be
 able to tweak the frontend without having to build and test the backend
 unnecessarily. Maybe the indexer shouldn't be deployed when the only
-thing that changed since the last release was the task worker.
+thing that changed since the last release is the task worker.
 
 Like the [dirty bits](https://en.wikipedia.org/wiki/Dirty_bit) that mark
 memory blocks as modified signal that the blocks need to processed,
@@ -196,10 +196,14 @@ The results as a JSON string.
 
 The [example rules file](#example-rules-file) above might produce the
 following `json-results` on a release event with tag `v1.0.2` that
-includes changes to `frontend` and `worker`:
+includes changes to `frontend` and `worker` (the output is formatted
+here for readability):
 
 ```json
 {
+  "allClean": false,
+  "allDirty": false,
+  "someDirty": true,
   "cleanBits": ["backend indexer"],
   "dirtyBits": ["frontend worker"],
   "bits": {
@@ -226,6 +230,10 @@ includes changes to `frontend` and `worker`:
 page](https://docs.github.com/en/github/committing-changes-to-your-project/comparing-commits)
 with information about the commits between `base` and `head`, including
 the files that were changed.
+
+If Dirty Bits panicked and had to mark all bits dirty, `json-results`
+will include a top-level property named `allDirtyReason` with text
+describing the problem.
 
 See [Example usage](#example-usage) for an example of how to use
 `json-results` in a workflow.
@@ -263,7 +271,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: get-dirty
-    # Skip the deploy job if all bits are clean.
+    # Run the deploy job if some bits are dirty AND none of the
+    # upstream jobs failed.
     if: needs.get-dirty.outputs.some-dirty == 'true'
     steps:
       - uses: actions/checkout@v2

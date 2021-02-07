@@ -11,19 +11,40 @@ import { OutputNames } from './output'
 
 type DiffEntry = components['schemas']['diff-entry']
 
-/** Results for a bit. */
+/** Results for repo a bit. */
 interface BitResults {
   dirty: boolean
   matchedFiles?: string[]
 }
 
-/** Maps bit name to results. */
+/** Maps repo bit name to results. */
 interface MatchResults {
   [bitName: string]: BitResults
 }
 
 /** Final dirty bit detection results. */
 export interface Results {
+  /** Indicates all bits are marked clean. */
+  allClean: boolean
+
+  /** Indicates all bits are marked dirty. */
+  allDirty: boolean
+
+  /** Indicates the reason all bits are assumed dirty. */
+  allDirtyReason?: undefined | string
+
+  /** Indicates at least one bit is marked dirty. */
+  someDirty: boolean
+
+  /** Match results keyed by repo bit name. */
+  bits: MatchResults
+
+  /** Names of clean bits. */
+  cleanBits: string[]
+
+  /** Names of dirty bits. */
+  dirtyBits: string[]
+
   /** Base commit used to determine changed files. */
   base: string
 
@@ -32,21 +53,6 @@ export interface Results {
 
   /** The GitHub HTML compare commits URL for `base` and `head`. */
   compareCommitsUrl: string
-
-  /** Match results keyed by bit name. */
-  bits: MatchResults
-
-  /** Indicates all bits are assumed dirty. */
-  allDirty: boolean
-
-  /** Indicates the reason all bits are assumed dirty. */
-  allDirtyReason?: undefined | string
-
-  /** Names of clean bits. */
-  cleanBits: string[]
-
-  /** Names of dirty bits. */
-  dirtyBits: string[]
 }
 
 interface ActionContext {
@@ -72,7 +78,7 @@ interface ActionContext {
   allDirtyReason?: undefined | string
 }
 
-/** Maps bit name to a list of patterns. */
+/** Maps repo bit name to a list of patterns. */
 export interface Rules {
   [bitName: string]: string[]
 }
@@ -181,7 +187,7 @@ async function findCommitRange(ctx: ActionContext, eventName: string): Promise<v
   }
 }
 
-/** Extracts relevant properties from entries. */
+/** Extracts relevant properties from diff entries. */
 function extract(entry: DiffEntry): ChangedFile {
   const { filename, status, sha } = entry
   const e = { filename, status, sha } as ChangedFile
@@ -192,8 +198,8 @@ function extract(entry: DiffEntry): ChangedFile {
 }
 
 /**
- * Extracts relevant properties from entries, replacing filename with
- * the old name prior to rename and sets `current_filename`.
+ * Extracts relevant properties from diff entries, replacing filename
+ * with the old name prior to rename and sets `current_filename`.
  */
 function extractRenamed(entry: DiffEntry): ChangedFile {
   const { filename, status, sha, previous_filename } = entry
@@ -269,27 +275,31 @@ export async function detect(ctx: ActionContext, rules: Rules): Promise<Results>
   await findCommitRange(ctx, github.context.eventName)
   const changedFiles = await compareCommits(ctx)
   const matchResults = match(ctx, rules, changedFiles)
-  const results = {
-    cleanBits: [],
-    dirtyBits: [],
-    bits: matchResults,
+  const cleanBits: string[] = []
+  const dirtyBits: string[] = []
+  const bits = matchResults
+  if (ctx.allDirty) {
+    for (const bitName of Object.keys(rules)) {
+      dirtyBits.push(bitName)
+      bits[bitName] = { dirty: true }
+    }
+  } else {
+    for (const [bitName, matchResult] of Object.entries(bits)) {
+      matchResult.dirty ? dirtyBits.push(bitName) : cleanBits.push(bitName)
+    }
+  }
+  return {
+    allClean: dirtyBits.length === 0,
+    allDirty: cleanBits.length === 0,
+    allDirtyReason: ctx.allDirtyReason,
+    someDirty: dirtyBits.length > 0,
+    cleanBits,
+    dirtyBits,
+    bits,
     base: ctx.base,
     head: ctx.head,
     compareCommitsUrl: ctx.compareCommitsUrl,
-    allDirty: ctx.allDirty ?? false,
-    allDirtyReason: ctx.allDirtyReason,
   } as Results
-  if (results.allDirty) {
-    for (const bitName of Object.keys(rules)) {
-      results.dirtyBits.push(bitName)
-      results.bits[bitName] = { dirty: true }
-    }
-  } else {
-    for (const [bitName, matchResult] of Object.entries(results.bits)) {
-      matchResult.dirty ? results.dirtyBits.push(bitName) : results.cleanBits.push(bitName)
-    }
-  }
-  return results
 }
 
 export async function detectDirtyBits(inputs: Inputs): Promise<Results> {
