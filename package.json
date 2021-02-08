@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@octokit/rest": "^18.1.0",
-    "@octokit/webhooks": "^7.21.0",
+    "@octokit/webhooks": "^7.24.3",
     "@types/jest": "^26.0.20",
     "@types/js-yaml": "^4.0.0",
     "@types/minimatch": "^3.0.3",
