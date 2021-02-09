@@ -117,7 +117,7 @@ export function loadRules(rulesFile: string): Rules {
   return rules
 }
 
-function markAllDirty(ctx: ActionContext, message: string) {
+function markAllDirty(ctx: ActionContext, message: string): void {
   core.info(`Marking all repo bits dirty: ${message}`)
   ctx.allDirty = true
   ctx.allDirtyReason = message

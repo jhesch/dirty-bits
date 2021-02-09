@@ -67,6 +67,11 @@ function loadRules(rulesFile) {
     return rules;
 }
 exports.loadRules = loadRules;
+function markAllDirty(ctx, message) {
+    core.info(`Marking all repo bits dirty: ${message}`);
+    ctx.allDirty = true;
+    ctx.allDirtyReason = message;
+}
 function findPreviousRelease(ctx, release) {
     return __awaiter(this, void 0, void 0, function* () {
         const { octokit } = ctx;
@@ -76,10 +81,7 @@ function findPreviousRelease(ctx, release) {
         const releases = listReleasesResponse.data.filter(r => !r.draft && !r.prerelease).map(r => r.tag_name);
         core.debug(`Found ${releases.length} published releases`);
         if (releases.length < 2) {
-            const message = 'unable to find previous release';
-            core.info(`Marking all bits dirty: ${message}`);
-            ctx.allDirty = true;
-            ctx.allDirtyReason = message;
+            markAllDirty(ctx, 'unable to find previous release');
             return '';
         }
         if (releases[0] !== release) {
@@ -163,6 +165,11 @@ function compareCommits(ctx) {
         const { octokit, base, head } = ctx;
         const { owner, repo } = ctx.inputs;
         core.info(`Comparing ${base}...${head}`);
+        const nullCommit = '0000000000000000000000000000000000000000';
+        if (base === nullCommit && head === nullCommit) {
+            markAllDirty(ctx, `null commit (${nullCommit}) found`);
+            return [];
+        }
         // https://docs.github.com/en/rest/reference/repos#compare-two-commits
         const response = yield octokit.repos.compareCommits({ owner, repo, base, head });
         ctx.compareCommitsUrl = response.data.html_url;
@@ -170,10 +177,7 @@ function compareCommits(ctx) {
         const totalCommits = response.data.total_commits;
         if (numCommits < totalCommits) {
             // Too many commits; mark all bits dirty.
-            const message = `${base}...${head} includes ${totalCommits} commits (max ${numCommits})`;
-            core.info(`Marking all bits dirty: ${message}`);
-            ctx.allDirty = true;
-            ctx.allDirtyReason = message;
+            markAllDirty(ctx, `${base}...${head} includes ${totalCommits} commits (max ${numCommits})`);
             return [];
         }
         const changedFiles = response.data.files.map(extract);
