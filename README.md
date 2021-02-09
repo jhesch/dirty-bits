@@ -283,12 +283,17 @@ jobs:
     # Run the deploy job if some bits are dirty AND none of the
     # upstream jobs failed.
     if: needs.get-dirty.outputs.some-dirty == 'true'
+    # Make outputs available to the notify job.
+    outputs:
+      completed: ${{ steps.complete.outputs.completed }}
     steps:
       - uses: actions/checkout@v2
       # Build and execute a deploy command based on Dirty Bits results.
       - run: |
           gcloud app deploy $(echo '${{ needs.get-dirty.outputs.json-results }}' \
             | jq -r '.dirtyBits | map("\(.)/app.yaml") | join(" ")') -q
+      - id: complete
+        run: echo "::set-output name=completed::true"
 
   # Post to Slack on successful deployment.
   notify:
@@ -297,14 +302,18 @@ jobs:
     # Run the notify job whether or not the deploy job succeeded.
     if: always()
     steps:
-      - name: Failure
-        if: failure()
-        run: echo Deployment failed
       - name: All clean
-        if: success() && needs.get-dirty.outputs.some-dirty != 'true'
+        if: needs.get-dirty.outputs.some-dirty != 'true'
         run: echo Nothing to deploy
+      - name: Failure
+        if: |
+          needs.get-dirty.outputs.some-dirty == 'true' &&
+          needs.deploy.outputs.completed != 'true'
+        run: echo Deployment failed
       - name: Success
-        if: success() && steps.dirty-bits.outputs.some-dirty == 'true'
+        if: |
+          needs.get-dirty.outputs.some-dirty == 'true' &&
+          needs.deploy.outputs.completed == 'true'
         run: |
           curl -s -H 'Content-type: application/json' --data \
             $(echo '${{ needs.get-dirty.outputs.json-results }}' | \
