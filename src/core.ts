@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { GitHub } from '@actions/github/lib/utils'
 import { components } from '@octokit/openapi-types'
-import * as webhooks from '@octokit/webhooks'
+import { PullRequestEvent, PushEvent, ReleaseEvent, WorkflowDispatchEvent } from '@octokit/webhooks-definitions/schema'
 import * as fs from 'fs'
 import * as yaml from 'js-yaml'
 import minimatch from 'minimatch'
@@ -148,21 +148,21 @@ async function findCommitRange(ctx: ActionContext, eventName: string): Promise<v
   }
   switch (eventName) {
     case 'pull_request': {
-      const pullPayload = github.context.payload as webhooks.EventPayloads.WebhookPayloadPullRequest
+      const pullPayload = github.context.payload as PullRequestEvent
       core.info(`Event: pull request #${pullPayload.number}`)
       ctx.base = pullPayload.pull_request.base.sha
       ctx.head = pullPayload.pull_request.head.sha
       break
     }
     case 'push': {
-      const pushPayload = github.context.payload as webhooks.EventPayloads.WebhookPayloadPush
+      const pushPayload = github.context.payload as PushEvent
       core.info(`Event: push ${pushPayload.ref}`)
       ctx.base = pushPayload.before
       ctx.head = pushPayload.after
       break
     }
     case 'release': {
-      const releasePayload = github.context.payload as webhooks.EventPayloads.WebhookPayloadRelease
+      const releasePayload = github.context.payload as ReleaseEvent
       const currentRelease = releasePayload.release.tag_name
       core.info(`Event: release tag ${currentRelease}`)
       const previousRelease = await findPreviousRelease(ctx, currentRelease)
@@ -172,7 +172,7 @@ async function findCommitRange(ctx: ActionContext, eventName: string): Promise<v
       break
     }
     case 'workflow_dispatch': {
-      type DispatchPayload = webhooks.EventPayloads.WebhookPayloadWorkflowDispatch & {
+      type DispatchPayload = WorkflowDispatchEvent & {
         inputs: { base: string; head: string }
       }
       const dispatchPayload = github.context.payload as DispatchPayload
