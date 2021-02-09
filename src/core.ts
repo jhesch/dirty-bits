@@ -218,6 +218,11 @@ export async function compareCommits(ctx: ActionContext): Promise<ChangedFile[]>
   const { octokit, base, head } = ctx
   const { owner, repo } = ctx.inputs
   core.info(`Comparing ${base}...${head}`)
+  const nullCommit = '0000000000000000000000000000000000000000'
+  if (base === nullCommit && head === nullCommit) {
+    markAllDirty(ctx, `null commit (${nullCommit}) found`)
+    return []
+  }
   // https://docs.github.com/en/rest/reference/repos#compare-two-commits
   const response = await octokit.repos.compareCommits({ owner, repo, base, head })
   ctx.compareCommitsUrl = response.data.html_url
