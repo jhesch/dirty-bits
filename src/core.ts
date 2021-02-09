@@ -117,6 +117,12 @@ export function loadRules(rulesFile: string): Rules {
   return rules
 }
 
+function markAllDirty(ctx: ActionContext, message: string) {
+  core.info(`Marking all repo bits dirty: ${message}`)
+  ctx.allDirty = true
+  ctx.allDirtyReason = message
+}
+
 async function findPreviousRelease(ctx: ActionContext, release: string): Promise<string> {
   const { octokit } = ctx
   const { owner, repo } = ctx.inputs
@@ -125,10 +131,7 @@ async function findPreviousRelease(ctx: ActionContext, release: string): Promise
   const releases = listReleasesResponse.data.filter(r => !r.draft && !r.prerelease).map(r => r.tag_name)
   core.debug(`Found ${releases.length} published releases`)
   if (releases.length < 2) {
-    const message = 'unable to find previous release'
-    core.info(`Marking all bits dirty: ${message}`)
-    ctx.allDirty = true
-    ctx.allDirtyReason = message
+    markAllDirty(ctx, 'unable to find previous release')
     return ''
   }
   if (releases[0] !== release) {
@@ -222,10 +225,7 @@ export async function compareCommits(ctx: ActionContext): Promise<ChangedFile[]>
   const totalCommits = response.data.total_commits
   if (numCommits < totalCommits) {
     // Too many commits; mark all bits dirty.
-    const message = `${base}...${head} includes ${totalCommits} commits (max ${numCommits})`
-    core.info(`Marking all bits dirty: ${message}`)
-    ctx.allDirty = true
-    ctx.allDirtyReason = message
+    markAllDirty(ctx, `${base}...${head} includes ${totalCommits} commits (max ${numCommits})`)
     return []
   }
   const changedFiles = response.data.files.map(extract)
