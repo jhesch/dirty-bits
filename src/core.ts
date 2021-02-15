@@ -219,7 +219,7 @@ export async function compareCommits(ctx: ActionContext): Promise<ChangedFile[]>
   const { owner, repo } = ctx.inputs
   core.info(`Comparing ${base}...${head}`)
   const nullCommit = '0000000000000000000000000000000000000000'
-  if (base === nullCommit && head === nullCommit) {
+  if (base === nullCommit || head === nullCommit) {
     markAllDirty(ctx, `null commit (${nullCommit}) found`)
     return []
   }
