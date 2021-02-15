@@ -208,8 +208,14 @@ here for readability):
   "allClean": false,
   "allDirty": false,
   "someDirty": true,
-  "cleanBits": ["backend indexer"],
-  "dirtyBits": ["frontend worker"],
+  "cleanBits": [
+    "backend",
+    "indexer"
+  ],
+  "dirtyBits": [
+    "frontend",
+    "worker"
+  ],
   "bits": {
     "backend": {
       "dirty": false
@@ -290,8 +296,8 @@ jobs:
       - uses: actions/checkout@v2
       # Build and execute a deploy command based on Dirty Bits results.
       - run: |
-          gcloud app deploy $(echo '${{ needs.get-dirty.outputs.json-results }}' \
-            | jq -r '.dirtyBits | map("\(.)/app.yaml") | join(" ")') -q
+          gcloud app deploy $(echo '${{ needs.get-dirty.outputs.json-results }}' | \
+            jq -r '.dirtyBits | map("\(.)/app.yaml") | join(" ")') -q
       - id: complete
         run: echo "::set-output name=completed::true"
 

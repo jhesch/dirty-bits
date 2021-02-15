@@ -182,7 +182,7 @@ async function findCommitRange(ctx: ActionContext, eventName: string): Promise<v
       ctx.base = dispatchPayload.inputs.base
       ctx.head = dispatchPayload.inputs.head
       core.info(`Event: workflow dispatch ${dispatchPayload.workflow}`)
-      core.info(`Commit range from inputs: ${ctx.base}...${ctx.head}`)
+      core.info(`Commit range from workflow inputs: ${ctx.base}...${ctx.head}`)
       break
     }
     default:
