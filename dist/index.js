@@ -130,7 +130,7 @@ function findCommitRange(ctx, eventName) {
                 ctx.base = dispatchPayload.inputs.base;
                 ctx.head = dispatchPayload.inputs.head;
                 core.info(`Event: workflow dispatch ${dispatchPayload.workflow}`);
-                core.info(`Commit range from inputs: ${ctx.base}...${ctx.head}`);
+                core.info(`Commit range from workflow inputs: ${ctx.base}...${ctx.head}`);
                 break;
             }
             default:
@@ -166,7 +166,7 @@ function compareCommits(ctx) {
         const { owner, repo } = ctx.inputs;
         core.info(`Comparing ${base}...${head}`);
         const nullCommit = '0000000000000000000000000000000000000000';
-        if (base === nullCommit && head === nullCommit) {
+        if (base === nullCommit || head === nullCommit) {
             markAllDirty(ctx, `null commit (${nullCommit}) found`);
             return [];
         }
