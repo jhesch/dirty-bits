@@ -34,9 +34,10 @@ steps and jobs in the workflow how to proceed.
 
 The Dirty Bits action can respond to
 [pull_request](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#pull_request),
-[push](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#push)
-and
+[push](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#push),
 [release](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#release)
+and
+[workflow_dispatch](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#workflow_dispatch)
 events. It identifies two commits that represent the state of the
 repository before and after the event that triggered the action. Those
 commits are referred to as `base` (the repo state before the event) and
@@ -265,7 +266,7 @@ jobs:
   # Determine which repo bits have changed.
   get-dirty:
     runs-on: ubuntu-latest
-    # Make outputs available to the deploy job.
+    # Make outputs available to the deploy and notify jobs.
     outputs:
       json-results: ${{ steps.dirty-bits.outputs.json-results }}
       some-dirty: ${{ steps.dirty-bits.outputs.some-dirty }}
@@ -286,8 +287,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: get-dirty
-    # Run the deploy job if some bits are dirty AND none of the
-    # upstream jobs failed.
+    # Run the deploy job only if some bits are dirty.
     if: needs.get-dirty.outputs.some-dirty == 'true'
     # Make outputs available to the notify job.
     outputs:
@@ -309,7 +309,7 @@ jobs:
     if: always()
     steps:
       - name: All clean
-        if: needs.get-dirty.outputs.some-dirty != 'true'
+        if: needs.get-dirty.outputs.some-dirty == 'false'
         run: echo Nothing to deploy
       - name: Failure
         if: |
@@ -334,3 +334,30 @@ corresponding `app.yaml` file in the bit's directory, resulting in a
 command like `gcloud app deploy frontend/app.yaml worker/app.yaml -q`.
 Note that this requires naming each bit in the rules file the same as
 its directory in the repo.
+
+## Development
+
+When you are developing your workflow and rules files, it can be useful
+to execute Dirty Bits on demand with a commit range that you control.
+Using the `workflow_dispatch` event, you can define a workflow and
+trigger it manually with custom `base` and `head` inputs:
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Base commit
+        required: true
+        default: HEAD^
+      head:
+        description: Head commit
+        required: true
+        default: HEAD
+
+jobs:
+  ...
+```
+See the [workflow_dispatch
+reference](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#workflow_dispatch)
+for details.
