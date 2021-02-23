@@ -283,7 +283,7 @@ jobs:
           echo These bits are dirty: ${{ steps.dirty-bits.outputs.dirty-bits }}
           echo The frontend bit is ${{ steps.dirty-bits.outputs.frontend }}
 
-  # Deploy repo the bits that changed, and only those bits.
+  # Deploy the repo bits that changed, and only those bits.
   deploy:
     runs-on: ubuntu-latest
     needs: get-dirty
