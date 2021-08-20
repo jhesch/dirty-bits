@@ -39,7 +39,7 @@
   "devDependencies": {
     "@octokit/rest": "^18.9.0",
     "@octokit/webhooks-definitions": "^3.67.3",
-    "@types/jest": "^26.0.24",
+    "@types/jest": "^27.0.1",
     "@types/js-yaml": "^4.0.2",
     "@types/minimatch": "^3.0.5",
     "@types/node": "^16.4.13",
