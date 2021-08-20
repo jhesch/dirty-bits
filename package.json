@@ -40,7 +40,7 @@
     "@octokit/rest": "^18.9.0",
     "@octokit/webhooks-definitions": "^3.67.3",
     "@types/jest": "^27.0.1",
-    "@types/js-yaml": "^4.0.2",
+    "@types/js-yaml": "^4.0.3",
     "@types/minimatch": "^3.0.5",
     "@types/node": "^16.6.2",
     "@typescript-eslint/parser": "^4.29.1",
