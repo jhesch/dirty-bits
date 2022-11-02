@@ -8,6 +8,7 @@ export interface Inputs {
   repo: string
   base: string
   head: string
+  rewriteNullCommit: boolean
 }
 
 export function getInputs(): Inputs {
@@ -33,5 +34,6 @@ export function getInputs(): Inputs {
   if (inputs.base && inputs.head) {
     core.debug(`Commit range: ${inputs.base}...${inputs.head}`)
   }
+  inputs.rewriteNullCommit = core.getInput('rewrite-null-commit') === 'true'
   return inputs
 }
