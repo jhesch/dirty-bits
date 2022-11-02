@@ -46,6 +46,7 @@ const fs = __importStar(__nccwpck_require__(5747));
 const yaml = __importStar(__nccwpck_require__(1917));
 const minimatch_1 = __importDefault(__nccwpck_require__(3973));
 const output_1 = __nccwpck_require__(138);
+const NULL_COMMIT = '0000000000000000000000000000000000000000';
 function loadRules(rulesFile) {
     core.startGroup('Loading rules');
     core.info(`Loading rules from ${rulesFile}`);
@@ -113,6 +114,14 @@ function findCommitRange(ctx, eventName) {
                 core.info(`Event: push ${pushPayload.ref}`);
                 ctx.base = pushPayload.before;
                 ctx.head = pushPayload.after;
+                // The push event includes the null commit for `before` when a new
+                // branch is being pushed. Instead of marking all dirty (the
+                // behavior when the null commit is seen), set base to the commit
+                // prior to `after`.
+                if (ctx.inputs.rewriteNullCommit && ctx.base === NULL_COMMIT) {
+                    core.info(`Null commit found for push "before"; rewriting to ${ctx.head}^`);
+                    ctx.base = `${ctx.head}^`;
+                }
                 break;
             }
             case 'release': {
@@ -165,9 +174,8 @@ function compareCommits(ctx) {
         const { octokit, base, head } = ctx;
         const { owner, repo } = ctx.inputs;
         core.info(`Comparing ${base}...${head}`);
-        const nullCommit = '0000000000000000000000000000000000000000';
-        if (base === nullCommit || head === nullCommit) {
-            markAllDirty(ctx, `null commit (${nullCommit}) found`);
+        if (base === NULL_COMMIT || head === NULL_COMMIT) {
+            markAllDirty(ctx, `null commit (${NULL_COMMIT}) found`);
             return [];
         }
         // https://docs.github.com/en/rest/reference/repos#compare-two-commits
@@ -323,6 +331,7 @@ function getInputs() {
     if (inputs.base && inputs.head) {
         core.debug(`Commit range: ${inputs.base}...${inputs.head}`);
     }
+    inputs.rewriteNullCommit = core.getInput('rewrite-null-commit') === 'true';
     return inputs;
 }
 exports.getInputs = getInputs;
