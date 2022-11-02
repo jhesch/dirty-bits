@@ -9,6 +9,8 @@ import minimatch from 'minimatch'
 import { Inputs } from './input'
 import { OutputNames } from './output'
 
+const NULL_COMMIT = '0000000000000000000000000000000000000000'
+
 type DiffEntry = components['schemas']['diff-entry']
 
 /** Results for repo a bit. */
@@ -162,6 +164,14 @@ async function findCommitRange(ctx: ActionContext, eventName: string): Promise<v
       core.info(`Event: push ${pushPayload.ref}`)
       ctx.base = pushPayload.before
       ctx.head = pushPayload.after
+      // The push event includes the null commit for `before` when a new
+      // branch is being pushed. Instead of marking all dirty (the
+      // behavior when the null commit is seen), set base to the commit
+      // prior to `after`.
+      if (ctx.inputs.rewriteNullCommit && ctx.base === NULL_COMMIT) {
+        core.info(`Null commit found for push "before"; rewriting to ${ctx.head}^`)
+        ctx.base = `${ctx.head}^`
+      }
       break
     }
     case 'release': {
@@ -218,9 +228,8 @@ export async function compareCommits(ctx: ActionContext): Promise<ChangedFile[]>
   const { octokit, base, head } = ctx
   const { owner, repo } = ctx.inputs
   core.info(`Comparing ${base}...${head}`)
-  const nullCommit = '0000000000000000000000000000000000000000'
-  if (base === nullCommit || head === nullCommit) {
-    markAllDirty(ctx, `null commit (${nullCommit}) found`)
+  if (base === NULL_COMMIT || head === NULL_COMMIT) {
+    markAllDirty(ctx, `null commit (${NULL_COMMIT}) found`)
     return []
   }
   // https://docs.github.com/en/rest/reference/repos#compare-two-commits
