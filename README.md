@@ -299,7 +299,7 @@ jobs:
           gcloud app deploy $(echo '${{ needs.get-dirty.outputs.json-results }}' | \
             jq -r '.dirtyBits | map("\(.)/app.yaml") | join(" ")') -q
       - id: complete
-        run: echo "::set-output name=completed::true"
+        run: echo "completed=true" >> $GITHUB_OUTPUT
 
   # Post to Slack on successful deployment.
   notify:
