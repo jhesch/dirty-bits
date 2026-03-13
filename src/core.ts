@@ -186,13 +186,18 @@ async function findCommitRange(ctx: ActionContext, eventName: string): Promise<v
     }
     case 'workflow_dispatch': {
       type DispatchPayload = WorkflowDispatchEvent & {
-        inputs: { base: string; head: string }
+        inputs: { base: string; head: string } | null
       }
       const dispatchPayload = github.context.payload as DispatchPayload
-      ctx.base = dispatchPayload.inputs.base
-      ctx.head = dispatchPayload.inputs.head
-      core.info(`Event: workflow dispatch ${dispatchPayload.workflow}`)
-      core.info(`Commit range from workflow inputs: ${ctx.base}...${ctx.head}`)
+      if (dispatchPayload.inputs?.base && dispatchPayload.inputs?.head) {
+        ctx.base = dispatchPayload.inputs.base
+        ctx.head = dispatchPayload.inputs.head
+        core.info(`Event: workflow dispatch ${dispatchPayload.workflow}`)
+        core.info(`Commit range from workflow inputs: ${ctx.base}...${ctx.head}`)
+      } else {
+        core.info(`Event: workflow dispatch ${dispatchPayload.workflow}`)
+        markAllDirty(ctx, 'workflow_dispatch without base/head inputs')
+      }
       break
     }
     default:

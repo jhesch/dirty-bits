@@ -92,6 +92,7 @@ function findPreviousRelease(ctx, release) {
     });
 }
 function findCommitRange(ctx, eventName) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         if (ctx.inputs.base && ctx.inputs.head) {
             // We already have a commit range from inputs. All we need to do is
@@ -135,10 +136,16 @@ function findCommitRange(ctx, eventName) {
             }
             case 'workflow_dispatch': {
                 const dispatchPayload = github.context.payload;
-                ctx.base = dispatchPayload.inputs.base;
-                ctx.head = dispatchPayload.inputs.head;
-                core.info(`Event: workflow dispatch ${dispatchPayload.workflow}`);
-                core.info(`Commit range from workflow inputs: ${ctx.base}...${ctx.head}`);
+                if (((_a = dispatchPayload.inputs) === null || _a === void 0 ? void 0 : _a.base) && ((_b = dispatchPayload.inputs) === null || _b === void 0 ? void 0 : _b.head)) {
+                    ctx.base = dispatchPayload.inputs.base;
+                    ctx.head = dispatchPayload.inputs.head;
+                    core.info(`Event: workflow dispatch ${dispatchPayload.workflow}`);
+                    core.info(`Commit range from workflow inputs: ${ctx.base}...${ctx.head}`);
+                }
+                else {
+                    core.info(`Event: workflow dispatch ${dispatchPayload.workflow}`);
+                    markAllDirty(ctx, 'workflow_dispatch without base/head inputs');
+                }
                 break;
             }
             default:
