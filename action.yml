@@ -35,7 +35,7 @@ outputs:
   json-results:
     description: The results as a JSON string
 runs:
-  using: 'node16'
+  using: 'node24'
   main: 'dist/index.js'
 branding:
   icon: 'cpu'
