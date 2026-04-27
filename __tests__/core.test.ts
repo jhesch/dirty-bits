@@ -3,7 +3,7 @@ import { Octokit } from '@octokit/rest'
 import { compareCommits, detect, loadRules, match, Rules } from '../src/core'
 import { Inputs } from '../src/input'
 
-import nock = require('nock')
+import nock from 'nock'
 
 nock.disableNetConnect()
 
@@ -18,7 +18,7 @@ describe('load rules', () => {
   test('catch reserved words', async () => {
     expect(() => {
       const rules = loadRules('__tests__/rules-reserved.yaml')
-    }).toThrowError('invalid rules file: "some-dirty" is a reserved word')
+    }).toThrow('invalid rules file: "some-dirty" is a reserved word')
   })
 })
 

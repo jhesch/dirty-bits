@@ -129,7 +129,7 @@ async function findPreviousRelease(ctx: ActionContext, release: string): Promise
   const { octokit } = ctx
   const { owner, repo } = ctx.inputs
   // https://docs.github.com/en/rest/reference/repos#list-releases
-  const listReleasesResponse = await octokit.repos.listReleases({ owner, repo, per_page: 10 })
+  const listReleasesResponse = await octokit.rest.repos.listReleases({ owner, repo, per_page: 10 })
   const releases = listReleasesResponse.data.filter(r => !r.draft && !r.prerelease).map(r => r.tag_name)
   core.debug(`Found ${releases.length} published releases`)
   if (releases.length < 2) {
@@ -221,7 +221,7 @@ function extract(entry: DiffEntry): ChangedFile {
  */
 function extractRenamed(entry: DiffEntry): ChangedFile {
   const { filename, status, sha, previous_filename } = entry
-  return { filename: previous_filename ?? '', status, sha, current_filename: filename }
+  return { filename: previous_filename ?? '', status, sha: sha ?? '', current_filename: filename }
 }
 
 export async function compareCommits(ctx: ActionContext): Promise<ChangedFile[]> {
@@ -238,7 +238,7 @@ export async function compareCommits(ctx: ActionContext): Promise<ChangedFile[]>
     return []
   }
   // https://docs.github.com/en/rest/reference/repos#compare-two-commits
-  const response = await octokit.repos.compareCommits({ owner, repo, base, head })
+  const response = await octokit.rest.repos.compareCommits({ owner, repo, base, head })
   ctx.compareCommitsUrl = response.data.html_url
   const numCommits = response.data.commits.length
   const totalCommits = response.data.total_commits
@@ -247,10 +247,11 @@ export async function compareCommits(ctx: ActionContext): Promise<ChangedFile[]>
     markAllDirty(ctx, `${base}...${head} includes ${totalCommits} commits (max ${numCommits})`)
     return []
   }
-  const changedFiles = response.data.files.map(extract)
+  const files = response.data.files ?? []
+  const changedFiles = files.map(extract)
   // Append the previous filename of each renamed file to the dirty
   // list.
-  const previousFiles = response.data.files.filter(f => f.status === 'renamed').map(extractRenamed)
+  const previousFiles = files.filter(f => f.status === 'renamed').map(extractRenamed)
   const allChangedFiles = changedFiles.concat(previousFiles)
   if (core.isDebug()) {
     core.startGroup('Changed files from compareCommits:')
@@ -304,7 +305,11 @@ export async function detect(ctx: ActionContext, rules: Rules): Promise<Results>
     }
   } else {
     for (const [bitName, matchResult] of Object.entries(bits)) {
-      matchResult.dirty ? dirtyBits.push(bitName) : cleanBits.push(bitName)
+      if (matchResult.dirty) {
+        dirtyBits.push(bitName)
+      } else {
+        cleanBits.push(bitName)
+      }
     }
   }
   return {
@@ -318,7 +323,7 @@ export async function detect(ctx: ActionContext, rules: Rules): Promise<Results>
     base: ctx.base,
     head: ctx.head,
     compareCommitsUrl: ctx.compareCommitsUrl,
-  } as Results
+  }
 }
 
 export async function detectDirtyBits(inputs: Inputs): Promise<Results> {

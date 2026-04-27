@@ -9,7 +9,7 @@ async function run(): Promise<void> {
     const results = await detectDirtyBits(inputs)
     setOutputs(inputs, results)
   } catch (error) {
-    core.setFailed(error.message)
+    core.setFailed(error instanceof Error ? error.message : String(error))
   }
 }
 
