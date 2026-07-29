@@ -261,6 +261,11 @@ See [Example usage](#example-usage) for an example of how to use
 
 ## Example usage
 
+Use a major release tag such as `jhesch/dirty-bits@v3` to receive
+compatible updates, or pin the full commit SHA of a specific release for
+an immutable reference. The `main` branch contains development source and
+is not packaged for use as an action.
+
 ```yaml
 name: Dirty Bits example
 
@@ -282,9 +287,9 @@ jobs:
       some-dirty: ${{ steps.dirty-bits.outputs.some-dirty }}
     steps:
       # Check out the rules file.
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       # Detect dirty bits.
-      - uses: jhesch/dirty-bits@v1
+      - uses: jhesch/dirty-bits@v3
         id: dirty-bits
         with:
           rules-file: .github/dirty-bits.yaml
@@ -303,7 +308,7 @@ jobs:
     outputs:
       completed: ${{ steps.complete.outputs.completed }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       # Build and execute a deploy command based on Dirty Bits results.
       - run: |
           gcloud app deploy $(echo '${{ needs.get-dirty.outputs.json-results }}' | \
@@ -371,3 +376,6 @@ jobs:
 See the [workflow_dispatch
 reference](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#workflow_dispatch)
 for details.
+
+Maintainers can find the browser and command-line release procedures in
+[RELEASING.md](RELEASING.md).

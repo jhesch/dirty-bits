@@ -1,0 +1,121 @@
+name: Release
+run-name: Release ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Full semantic version tag (for example, v3.0.2)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: npm
+      - name: Validate release request
+        id: version
+        shell: bash
+        env:
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$RELEASE_REF" != "refs/heads/main" ]]; then
+            echo "::error::Releases must be run from the main branch."
+            exit 1
+          fi
+
+          if [[ ! "$RELEASE_VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Version must be a full semantic version such as v3.0.2."
+            exit 1
+          fi
+
+          major_version="v${BASH_REMATCH[1]}"
+
+          git fetch --no-tags origin main
+          current_main="$(git rev-parse origin/main)"
+          if [[ "$RELEASE_SHA" != "$current_main" ]]; then
+            echo "::error::main advanced after this run was queued. Start a new release run."
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin \
+            "refs/tags/$RELEASE_VERSION" >/dev/null 2>&1; then
+            echo "::error::Tag $RELEASE_VERSION already exists."
+            exit 1
+          fi
+
+          echo "major=$major_version" >> "$GITHUB_OUTPUT"
+      - name: Install dependencies
+        run: npm ci
+      - name: Build, check, and test
+        run: npm run all
+      - name: Verify generated files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git diff --exit-code
+          test -f dist/index.js
+          test -f dist/index.js.map
+          test -f dist/licenses.txt
+          test -f dist/sourcemap-register.js
+      - name: Create release commit
+        id: commit
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --force dist/
+          git commit -m "Build $RELEASE_VERSION"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Publish tags and release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MAJOR_VERSION: ${{ steps.version.outputs.major }}
+          RELEASE_SHA: ${{ steps.commit.outputs.sha }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          gh auth setup-git
+          git fetch --no-tags origin main
+          current_main="$(git rev-parse origin/main)"
+          if [[ "$SOURCE_SHA" != "$current_main" ]]; then
+            echo "::error::main advanced during the build. Start a new release run."
+            exit 1
+          fi
+
+          git tag "$RELEASE_VERSION" "$RELEASE_SHA"
+          git tag --force "$MAJOR_VERSION" "$RELEASE_SHA"
+          git push --atomic origin \
+            "refs/tags/$RELEASE_VERSION" \
+            "+refs/tags/$MAJOR_VERSION"
+          gh release create "$RELEASE_VERSION" \
+            --verify-tag \
+            --generate-notes \
+            --title "$RELEASE_VERSION"

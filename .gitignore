@@ -98,6 +98,9 @@ Thumbs.db
 __tests__/runner/*
 lib/**/*
 
+# Release artifacts are committed only to version tags.
+/dist/
+
 # Direnv
 /.envrc
 /.direnv/
