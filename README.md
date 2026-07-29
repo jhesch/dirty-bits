@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/jhesch/dirty-bits/actions?query=workflow%3Abuild-test"><img alt="Dirty Bits build-test status" src="https://github.com/jhesch/dirty-bits/workflows/build-test/badge.svg"></a>
+  <a href="https://github.com/jhesch/dirty-bits/actions/workflows/ci.yaml"><img alt="Dirty Bits CI status" src="https://github.com/jhesch/dirty-bits/actions/workflows/ci.yaml/badge.svg?branch=main"></a>
 </p>
 
 # Dirty Bits GitHub action
