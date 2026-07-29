@@ -10,15 +10,25 @@ Dirty Bits is a GitHub action that identifies the parts of a repository
 that need to be built, tested, deployed, etc. depending on which files
 have changed.
 
-Maybe you have a monorepo and a slick CI/CD system. Maybe you want to be
-able to tweak the frontend without having to build and test the backend
-unnecessarily. Maybe the indexer shouldn't be deployed when the only
-thing that changed since the last release is the task worker.
+In a monorepo with multiple components, CI/CD workflows can use Dirty
+Bits to limit work to the areas affected by a change. For example, a
+frontend-only update can skip backend builds and tests, and an indexer
+deployment can be skipped when only the task worker has changed since
+the last release.
+
+Using Dirty Bits for change detection within a workflow that runs for
+every pull request allows conditional jobs to be configured as
+[required status checks](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches#require-status-checks-before-merging)
+in a branch protection rule or branch ruleset. Jobs for affected
+components must pass, while jobs for unaffected components are skipped
+and report success. This keeps the merge gate consistent without running
+unnecessary work and avoids the pending required checks that result when
+GitHub skips an entire workflow because of a
+[`paths` filter](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpushpull_requestpull_request_targetpathspaths-ignore).
 
 Like the [dirty bit](https://en.wikipedia.org/wiki/Dirty_bit) that marks
-a memory block as modified and signals that the block needs to
-processed, Dirty Bits identifies the parts of a repository that have
-been modified and signals that they need to be processed.
+a modified memory block for processing, Dirty Bits identifies which
+parts of a repository have changed and require further work.
 
 ## TL;DR
 
